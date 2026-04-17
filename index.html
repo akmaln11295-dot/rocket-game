@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Rocket Game</title>
+
+<style>
+html,body{
+margin:0;
+padding:0;
+overflow:hidden;
+background:black;
+}
+
+canvas{
+display:block;
+position:fixed;
+top:0;
+left:0;
+}
+
+#menu,#gameover{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+z-index:10;
+}
+
+#menu{
+background:url("loby.jpg") center/cover no-repeat;
+}
+
+#gameover{
+display:none;
+background:rgba(0,0,0,0.65);
+}
+
+.btn{
+width:220px;
+max-width:70%;
+cursor:pointer;
+transition:0.15s;
+}
+
+.btn:active{
+transform:scale(0.95);
+}
+</style>
+</head>
+
+<body>
+
+<div id="menu">
+<img src="play.png" class="btn" onclick="startGame()">
+</div>
+
+<div id="gameover">
+<img src="restart.png" class="btn" onclick="restartGame()">
+</div>
+
+<audio id="bgm" src="sound.mp3" loop></audio>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+const bg = new Image();
+bg.src = "background.jpg";
+
+const rocketImg = new Image();
+rocketImg.src = "roket.png";
+
+const batuImg = new Image();
+batuImg.src = "batu rintangan.png";
+
+let jalan = false;
+
+let rocket = {
+x: canvas.width/2 - 35,
+y: canvas.height - 130,
+w: 70,
+h: 100,
+speed: 8
+};
+
+let batu = [];
+let timer = 0;
+
+let keys = {};
+
+addEventListener("keydown",e=>keys[e.key]=true);
+addEventListener("keyup",e=>keys[e.key]=false);
+
+addEventListener("touchmove",e=>{
+rocket.x = e.touches[0].clientX - rocket.w/2;
+});
+
+function startGame(){
+document.getElementById("bgm").play()
+document.getElementById("menu").style.display="none";
+jalan = true;
+loop();
+}
+
+function restartGame(){
+document.getElementById("gameover").style.display="none";
+rocket.x = canvas.width/2 - 35;
+batu = [];
+jalan = true;
+loop();
+}
+
+function spawnBatu(){
+let s = 55 + Math.random()*30;
+
+batu.push({
+x: Math.random()*(canvas.width-s),
+y: -s,
+w: s,
+h: s,
+speed: 4 + Math.random()*3
+});
+}
+
+function update(){
+
+if(keys["ArrowLeft"] || keys["a"]) rocket.x -= rocket.speed;
+if(keys["ArrowRight"] || keys["d"]) rocket.x += rocket.speed;
+
+if(rocket.x < 0) rocket.x = 0;
+if(rocket.x + rocket.w > canvas.width)
+rocket.x = canvas.width - rocket.w;
+
+timer++;
+if(timer > 28){
+spawnBatu();
+timer = 0;
+}
+
+for(let i=batu.length-1;i>=0;i--){
+batu[i].y += batu[i].speed;
+
+if(
+rocket.x < batu[i].x + batu[i].w &&
+rocket.x + rocket.w > batu[i].x &&
+rocket.y < batu[i].y + batu[i].h &&
+rocket.y + rocket.h > batu[i].y
+){
+gameOver();
+}
+
+if(batu[i].y > canvas.height + 80){
+batu.splice(i,1);
+}
+}
+}
+
+function draw(){
+ctx.drawImage(bg,0,0,canvas.width,canvas.height);
+
+ctx.drawImage(
+rocketImg,
+rocket.x,
+rocket.y,
+rocket.w,
+rocket.h
+);
+
+for(let b of batu){
+ctx.drawImage(batuImg,b.x,b.y,b.w,b.h);
+}
+}
+
+function loop(){
+if(!jalan) return;
+
+update();
+draw();
+
+requestAnimationFrame(loop);
+}
+
+function gameOver(){
+document.getElementById("bgm").pause()
+jalan = false;
+document.getElementById("gameover").style.display="flex";
+}
+</script>
+
+</body>
+</html>
